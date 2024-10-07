@@ -1,1 +1,1 @@
-This is my classwork from AMATH 581
+This is my classwork and homework from AMATH 581
