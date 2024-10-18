@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import odeint, trapezoid
+import matplotlib.pyplot as plt
 
 def shoot2(x, dummy, epsilon):
     return [x[1], (epsilon - dummy**2)*x[0]]
@@ -12,6 +13,7 @@ xshoot = np.arange(-L, L+dx, dx)
 epsilon_start = 1
 eigenvalues = []
 eigenfunctions = []
+x0 = [1, np.sqrt((L)**2 - epsilon_start)]
 
 for modes in range(1, 6):
     epsilon = epsilon_start
@@ -42,4 +44,3 @@ for modes in range(1, 6):
 A1 = np.array(eigenfunctions).T
 A1 = np.abs(A1)
 A2 = np.array(eigenvalues)
-
