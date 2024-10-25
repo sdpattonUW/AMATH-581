@@ -17,14 +17,13 @@ xshoot = np.arange(-L,L+dx,dx)
 epsilon_start = 0.1
 eigenvalues = []
 eigenfunctions = []
-
+x0 = [1, np.sqrt(L**2 - epsilon_start)]
 
 for modes in range(1,6):
 
     epsilon = epsilon_start
-
     depsilon = 0.2
-    x0 = [1, np.sqrt(L**2 - epsilon)]
+
     for _ in range (1000):
 
         y = odeint(shoot2, x0, xshoot, args = (epsilon,))
@@ -53,11 +52,11 @@ for modes in range(1,6):
 
 
 
-    norm = np.trapezoid(y[:, 0] * y[:,0], xshoot)
+    norm = trapezoid(y[:, 0] * y[:,0], xshoot)
 
     eigenfunction_normalized = y[:,0] / np.sqrt(norm)
 
-    eigenfunctions.append(eigenfunction_normalized)
+    eigenfunctions.append(np.abs(eigenfunction_normalized))
 
 
 A1 = np.array(eigenfunctions).T
