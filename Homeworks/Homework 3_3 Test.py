@@ -1,71 +1,75 @@
 import numpy as np
-from scipy.integrate import solve_bvp, trapezoid
+from scipy.integrate import solve_ivp, trapezoid
 import matplotlib.pyplot as plt
 
+# Part A #
+def shoot2(t, x, epsilon, gamma):
+    return [x[1], (gamma * np.abs(x[0])**2 + t**2 - epsilon) * x[0]]
+
+tol = 1e-4
 L = 2
 dx = 0.1
-epsilon_guess = 0.1
-gamma_values = [0.05, -0.05]
-x_span = np.arange(-L, L + dx, dx)
+A_start = 1e-5
+xshoot = np.arange(-L, L + dx, dx)
+eigenvalues = []
+eigenfunctions = []
 
-def bvp_rhs2(x, y, p, gamma):
-    epsilon = p[0]
-    return np.vstack((y[1], (gamma * np.abs(y[0])**2 + (x**2) - epsilon) * y[0]))
+for gamma in [0.05, -0.05]:
+    epsilon_start = 0.1
 
-def bvp_bc2(yl, yr, p):
-    return np.array([yl[0], yl[1] - 0.1, yr[0]])
+    for modes in range(1, 3):
+        epsilon = epsilon_start
+        depsilon = 0.2
 
-def mat4init_mode1(x):
-    return np.array([np.cos((np.pi / 8) * x), -(np.pi / 2) * np.sin((np.pi / 8) * x)])
+        A = A_start
+        dA = 0.01
 
-def mat4init_mode2(x):
-    return np.array([np.sin((np.pi / 2) * x), (np.pi / 2) * np.cos((np.pi / 2) * x)])
+        for _ in range(100):
 
-def solve_mode(gamma, init_guess_func):
-    init_guess = init_guess_func(x_span)
-    p_initial = [epsilon_guess]
+            for _ in range(100):
+                x0 = [A, A * np.sqrt(L**2 - epsilon_start)]
 
-    def rhs(x, y, p):
-        return bvp_rhs2(x, y, p, gamma)
+                # Using solve_ivp with "RK45" method (similar to odeint's default)
+                sol = solve_ivp(shoot2, [xshoot[0], xshoot[-1]], x0, t_eval=xshoot, args=(epsilon, gamma), method='RK45')
 
-    solution = solve_bvp(rhs, bvp_bc2, x_span, init_guess, p=p_initial)
+                y = sol.y.T  # transpose to make it compatible with odeint's output
 
-    if not solution.success:
-        raise RuntimeError("Solver did not converge for gamma =", gamma)
-    
-    # Normalize the eigenfunctions using trapezoid
-    phi1 = solution.sol(x_span)[0]
-    norm_phi1 = phi1 / np.sqrt(trapezoid(phi1**2, x_span))
+                if abs(y[-1, 1] + np.sqrt(L**2 - epsilon) * y[-1, 0]) < tol:
+                    break
 
-    return np.abs(norm_phi1), solution.p[0]  # Return the normalized eigenfunction and eigenvalue
+                if ((-1) ** (modes + 1)) * (y[-1, 1] + np.sqrt(L**2 - epsilon) * y[-1, 0]) > 0:
+                    epsilon += depsilon
+                else:
+                    epsilon -= depsilon
+                    depsilon /= 2
 
-A5, A6, A7, A8 = [], [], [], []
+            Area = trapezoid(y[:, 0] ** 2, xshoot)
 
-for gamma in gamma_values:
-    # Solve for the first mode
-    eigenfunc1, eigenvalue1 = solve_mode(gamma, mat4init_mode1)
-    # Solve for the second mode
-    eigenfunc2, eigenvalue2 = solve_mode(gamma, mat4init_mode2)
+            if abs(Area - 1) < tol:
+                eigenvalues.append(epsilon)
+                break
 
-    # Store results
-    if gamma > 0:
-        A5 = np.column_stack((eigenfunc1, eigenfunc2))  # Eigenfunctions for gamma = 0.05
-        A6 = np.array([eigenvalue1, eigenvalue2])        # Eigenvalues for gamma = 0.05
-    else:
-        A7 = np.column_stack((eigenfunc1, eigenfunc2))  # Eigenfunctions for gamma = -0.05
-        A8 = np.array([eigenvalue1, eigenvalue2])        # Eigenvalues for gamma = -0.05
+            if Area < 1:
+                A += dA
+            else:
+                A -= dA
+                dA /= 2
 
-# Plot the normalized eigenfunctions for visualization
-plt.figure(figsize=(10, 5))
-plt.plot(x_span, A7[:, 0], label=r'$\phi_1$ for $\gamma = -0.05$', color="orange")
-plt.plot(x_span, A7[:, 1], label=r'$\phi_2$ for $\gamma = -0.05$', color="green")
-plt.plot(x_span, A5[:, 0], label=r'$\phi_1$ for $\gamma = 0.05$', color="blue", linestyle='--')
-plt.plot(x_span, A5[:, 1], label=r'$\phi_2$ for $\gamma = 0.05$', color="red", linestyle='--')
-plt.xlabel('x')
-plt.ylabel(r'Normalized $|\phi_n|$')
-plt.legend()
-plt.title('Normalized Eigenfunctions for γ = ±0.05')
+        epsilon_start = epsilon + 0.1
+
+        norm = trapezoid(y[:, 0] ** 2, xshoot)
+        eigenfunction_normalized = y[:, 0] / np.sqrt(norm)
+        eigenfunctions.append(np.abs(eigenfunction_normalized))
+        print(gamma)
+
+A1 = np.array(eigenfunctions).T
+A2 = np.array(eigenvalues)
+
+print(A2)
+
+plt.plot(xshoot, A1[:, 0], '--')
+plt.plot(xshoot, A1[:, 1], '--')
+plt.plot(xshoot, A1[:, 2], color='red')
+plt.plot(xshoot, A1[:, 3], color='blue')
+plt.legend(['1st + mode','2nd + mode','1st - mode','2nd - mode'])
 plt.show()
-
-print(A6)
-print(A8)

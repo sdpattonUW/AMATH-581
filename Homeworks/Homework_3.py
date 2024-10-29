@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import odeint, trapezoid
+from scipy.integrate import odeint, trapezoid, solve_ivp
 import matplotlib.pyplot as plt
 
 # Part A #
@@ -84,57 +84,73 @@ A3 = V5
 A4 = D5
 
 # Part C #
-def shoot3(y, x, epsilon, gamma):
-    return [y[1], (gamma * abs(y[0])**2 + x**2 - epsilon) * y[0]] 
+def shoot2(t, x, epsilon, gamma):
+    return [x[1], (gamma * np.abs(x[0])**2 + t**2 - epsilon) * x[0]]
 
-tol = 1e-6
+tol = 1e-4
 L = 2
 dx = 0.1
-xshoot = np.arange(-L,L+dx,dx)
-epsilon_start = 0.1
-x0 = [0, 1]
-
-eigenvalues_pos = []
-eigenfunctions_pos = []
-eigenvalues_neg = []
-eigenfunctions_neg = []
+A_start = 1e-5
+xshoot = np.arange(-L, L + dx, dx)
+eigenvalues = []
+eigenfunctions = []
 
 for gamma in [0.05, -0.05]:
-    for modes in range(1,3):
+    epsilon_start = 0.1
+
+    for modes in range(1, 3):
         epsilon = epsilon_start
         depsilon = 0.2
 
-        for _ in range (1000):
-            y = odeint(shoot3, x0, xshoot, args = (epsilon, gamma))
+        A = A_start
+        dA = 0.01
 
-            if abs(y[-1,0]) < tol:
-                if gamma == 0.05:
-                    eigenvalues_pos.append(epsilon)
+        for _ in range(100):
+
+            for _ in range(100):
+                x0 = [A, A * np.sqrt(L**2 - epsilon_start)]
+
+                # Using solve_ivp with "RK45" method (similar to odeint's default)
+                sol = solve_ivp(shoot2, [xshoot[0], xshoot[-1]], x0, t_eval=xshoot, args=(epsilon, gamma), method='RK45')
+
+                y = sol.y.T  # transpose to make it compatible with odeint's output
+
+                if abs(y[-1, 1] + np.sqrt(L**2 - epsilon) * y[-1, 0]) < tol:
+                    break
+
+                if ((-1) ** (modes + 1)) * (y[-1, 1] + np.sqrt(L**2 - epsilon) * y[-1, 0]) > 0:
+                    epsilon += depsilon
                 else:
-                    eigenvalues_neg.append(epsilon)
+                    epsilon -= depsilon
+                    depsilon /= 2
+
+            Area = trapezoid(y[:, 0] ** 2, xshoot)
+
+            if abs(Area - 1) < tol:
+                eigenvalues.append(epsilon)
                 break
 
-            if ((-1)**(modes + 1)) * y[-1,0] > 0:
-                epsilon += depsilon
+            if Area < 1:
+                A += dA
             else:
-                epsilon -= depsilon
-                depsilon /= 2
+                A -= dA
+                dA /= 2
 
         epsilon_start = epsilon + 0.1
-        
-        norm = trapezoid(y[:,0]**2, xshoot)
-        eigenfunction_normalized = y[:,0] / np.sqrt(norm)
-        if gamma == 0.05:
-            eigenfunctions_pos.append(eigenfunction_normalized)
-        else:
-            eigenfunctions_neg.append(eigenfunction_normalized)
 
-#Eigenvalues and functions for positive gamma
-A5 = np.array(eigenfunctions_pos).T
-A6 = np.array(eigenvalues_pos)
+        norm = trapezoid(y[:, 0] ** 2, xshoot)
+        eigenfunction_normalized = y[:, 0] / np.sqrt(norm)
+        eigenfunctions.append(np.abs(eigenfunction_normalized))
+        print(gamma)
 
-A7 = np.array(eigenfunctions_neg).T
-A8 = np.array(eigenvalues_neg)
+eigenfunctions = np.array(eigenfunctions).T
+eigenvalues = np.array(eigenvalues)
+
+A5 = eigenfunctions[:,:2]
+A7 = eigenfunctions[:,2:]
+
+A6 = eigenvalues[:2]
+A8 = eigenvalues[2:]
 
 print(A6)
 print(A8)

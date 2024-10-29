@@ -1,54 +1,108 @@
 import numpy as np
-from scipy.integrate import odeint, trapezoid
 import matplotlib.pyplot as plt
+import scipy.integrate
+import copy
 
-# Part A #
-def shoot2(x, dummy, epsilon, gamma):
-    return [x[1], (gamma * np.abs(x[0])**2 + dummy**2 - epsilon)*x[0]] 
+#Q3
+# Define ODE
+def rhsfunc1(t, y, beta,gamma):
+    f1 = y[1] #f1 = y1'= y2 = phi'
+    K = 1
+    n0 = K*t*t #n(x) = x*x (here t is the independent variable)
+    f2 = (gamma*y[0]*y[0]+n0 - epsilon)*y[0]#this changes #f2 = y2' = phi"
+    return np.array([f1, f2])
 
-tol = 1e-4
-L = 2
-dx = 0.1
-xshoot = np.arange(-L,L+dx,dx)
-eigenvalues = []
-eigenfunctions = []
-x0 = [0, 1e-5]
+# Define some constants
+#n0 = 0 #defined inside the function
+# Define our initial conditions
+#A = 1 # This is the shooting-method parameter that we will change , y1_(-1) = A
+#y0 = np.array([A, 1]) # y1_(-1) = A, y2_(-1) = 1 #do I need to keep updating A? yes!
+L = 3 
+xp = [-L,L] # xspan
+tol = 1e-5 # We want to find beta such that |y(x=1)| < tol
+K = 1
+epsilon_start = 0 # This is our initial beta value, we will change it#recommended on piazza to start from epsilon = 0
+A_start = 0.001
+gamma = -0.05
 
-for gamma in [0.05, -0.05]:
-    epsilon_start = 0.1
+eigen_values_q3_A = []
+eigen_functions_q3_A = []
 
-    for modes in range(1,3):
-        epsilon = epsilon_start
-        depsilon = 0.2
+# Make a loop over beta values to find more eigenvalue-eigenfunction pairs
+#modes is another way to say eigenfunction
 
-        for _ in range (1000):
-            y = odeint(shoot2, x0, xshoot, args = (epsilon, gamma,))
+for modes in range(2): # Try to find 5 modes
+    epsilon = epsilon_start 
+    depsilon = 0.01 # This is the amount we will decrease beta by each time we don't have an eigenvalue
+                 # until we get an eigenvalue
+    A =A_start
+     
+    for j in range(1000):
+        x_evals = np.linspace(-L, L, (20*L)+1) #20L + 1 linearly spaced points in between
         
-            if abs(y[-1,0]) < tol:
-                eigenvalues.append(epsilon)
-                break
+        #update/define y0 again, initial conditions
+        y0 = np.array([A, A*np.sqrt(K*L*L-epsilon)])
+        
+        ##check
+        sol = scipy.integrate.solve_ivp(lambda x,y: rhsfunc1(x, y, epsilon,gamma), xp, y0, t_eval = x_evals)
+        y_sol = sol.y[0, :] #gives phi
+        y_sol_1 =sol.y[1,:] #gives phi'
+        
+        
+        #compute norm and boundary condition
+        norm = scipy.integrate.trapezoid(y_sol**2,x=x_evals)
+        BC = y_sol_1[-1]+(np.sqrt(K*L*L-epsilon)*y_sol[-1]) #don't multiply by A boundary condition
 
-            if ((-1) ** (modes + 1))*(y[-1,0])  > 0:
-                epsilon += depsilon
+            
+        #checking both conditions
+        if np.abs(BC) < tol and np.abs(norm - 1) < tol :
+            #the boundary condition at phi'(x=L) should be limited to be less than here
+            #phi'(L) = - sqrt(epsilon)*phi(L) -->given < tol
+            #print(r'We got the eigenvalue! $\epsilon = $', epsilon)
+            eigen_values_q3_A.append(epsilon)
+            break
+        else:
+            #update initial condition with new A
+            A = A/np.sqrt(norm)
+        
+        #update/define y0 again, initial conditions
+        y0 = np.array([A, A*np.sqrt(K*L*L-epsilon)])
+        
+        #solving ode
+        sol = scipy.integrate.solve_ivp(lambda x,y: rhsfunc1(x, y, epsilon,gamma), xp, y0, t_eval = x_evals)
+        y_sol = sol.y[0, :] #gives phi
+        y_sol_1 =sol.y[1,:] #gives phi'
+        
+        #compute norm and boundary condition
+        norm = scipy.integrate.trapezoid(y_sol**2,x=x_evals)
+        BC = y_sol_1[-1]+(np.sqrt(K*L*L-epsilon)*y_sol[-1]) #don't multiply by A boundary condition
+      
+        #checking both conditions
+        if np.abs(BC) < tol and np.abs(norm - 1) < tol:
+            #the boundary condition at phi'(x=L) should be limited to be less than here
+            #phi'(L) = - sqrt(epsilon)*phi(L) -->given < tol
+            #print(r'We got the eigenvalue! $\epsilon = $', epsilon)
+            eigen_values_q3_A.append(epsilon)
+            break
+       
+        #shooting for BC
+        if (-1)**(modes)*(BC) > 0:
+            
+            #phi'(L) = - sqrt(KL^2 - epsilon)*phi(L)
+            epsilon = epsilon + depsilon 
+            # Decrease beta if y(1)>0, because we know that y(1)>0 for beta = beta_start
+            
+        else:
+            epsilon = epsilon - depsilon/2  # Increase beta by a smaller amount if y(1)<0
+            depsilon = depsilon/2 # Cut dbeta in half to make we converge
 
-            else:
-                epsilon -= depsilon
-                depsilon /= 2
 
-        epsilon_start = epsilon + 0.2
+            
+    epsilon_start = epsilon + 0.1 # increase beta once we have found one mode.
 
-        norm = trapezoid(y[:, 0] * y[:,0], xshoot)
-        eigenfunction_normalized = y[:,0] / np.sqrt(norm)
-        eigenfunctions.append(np.abs(eigenfunction_normalized))
-        print(gamma)
-
-A1 = np.array(eigenfunctions).T
-A2 = np.array(eigenvalues)
-
-print(A2)
-
-plt.plot(xshoot,A1[:,0])
-plt.plot(xshoot,A1[:,1])
-plt.plot(xshoot,A1[:,2],'--', color = 'red')
-plt.plot(xshoot,A1[:,3],'--', color ='blue')
+    
+    eigen_functions_q3_A.append(y_sol)
+    
+    plt.plot(sol.t, np.array(eigen_functions_q3_A).T, linewidth=2)
+    plt.plot(sol.t, 0*sol.t, 'k')
 plt.show()
