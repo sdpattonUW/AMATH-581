@@ -67,4 +67,5 @@ plt.legend()
 plt.title('Normalized Eigenfunctions for γ = ±0.05')
 plt.show()
 
-
+print(A6)
+print(A8)

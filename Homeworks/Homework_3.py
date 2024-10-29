@@ -84,51 +84,68 @@ A3 = V5
 A4 = D5
 
 # Part C #
-def shoot3(x, dummy, epsilon, gamma):
-    return [x[1], (gamma * abs(x[0])**2 + dummy**2 - epsilon) * x[0]] 
+def shoot3(y, x, epsilon, gamma):
+    return [y[1], (gamma * abs(y[0])**2 + x**2 - epsilon) * y[0]] 
 
-tol = 1e-4
+tol = 1e-6
 L = 2
 dx = 0.1
 xshoot = np.arange(-L,L+dx,dx)
 epsilon_start = 0.1
+x0 = [0, 1]
 
 eigenvalues_pos = []
 eigenfunctions_pos = []
 eigenvalues_neg = []
 eigenfunctions_neg = []
 
-x0 = [1, np.sqrt(L**2 - epsilon_start)]
-
 for gamma in [0.05, -0.05]:
     for modes in range(1,3):
         epsilon = epsilon_start
-        depsilon = 0.1
+        depsilon = 0.2
 
-        for _ in range(1000):
-            y = odeint(shoot3, x0, xshoot, args=(epsilon, gamma))
+        for _ in range (1000):
+            y = odeint(shoot3, x0, xshoot, args = (epsilon, gamma))
 
             if abs(y[-1,0]) < tol:
                 if gamma == 0.05:
                     eigenvalues_pos.append(epsilon)
-                    norm = trapezoid(y[:, 0] * y[:, 0], xshoot)
-                    eigenfunction_normalized = y[:, 0] / np.sqrt(norm)
-                    eigenfunctions_pos.append(np.abs(eigenfunction_normalized))
                 else:
                     eigenvalues_neg.append(epsilon)
-                    norm = trapezoid(y[:, 0] * y[:, 0], xshoot)
-                    eigenfunction_normalized = y[:, 0] / np.sqrt(norm)
-                    eigenfunctions_neg.append(np.abs(eigenfunction_normalized))
                 break
 
-            if ((-1) ** (modes + 1)) * y[-1,0] > 0:
+            if ((-1)**(modes + 1)) * y[-1,0] > 0:
                 epsilon += depsilon
             else:
                 epsilon -= depsilon
                 depsilon /= 2
 
-        epsilon_start = epsilon + depsilon
+        epsilon_start = epsilon + 0.1
+        
+        norm = trapezoid(y[:,0]**2, xshoot)
+        eigenfunction_normalized = y[:,0] / np.sqrt(norm)
+        if gamma == 0.05:
+            eigenfunctions_pos.append(eigenfunction_normalized)
+        else:
+            eigenfunctions_neg.append(eigenfunction_normalized)
 
+#Eigenvalues and functions for positive gamma
+A5 = np.array(eigenfunctions_pos).T
+A6 = np.array(eigenvalues_pos)
 
-plt.plot(xshoot, np.array(eigenfunctions_pos).T, xshoot, np.array(eigenfunctions_neg).T)
+A7 = np.array(eigenfunctions_neg).T
+A8 = np.array(eigenvalues_neg)
+
+print(A6)
+print(A8)
+
+plt.figure(figsize=(10, 5))
+plt.plot(xshoot, A7[:, 0], label=r'$\phi_1$ for $\gamma = -0.05$', color="orange")
+plt.plot(xshoot, A7[:, 1], label=r'$\phi_2$ for $\gamma = -0.05$', color="green")
+plt.plot(xshoot, A5[:, 0], label=r'$\phi_1$ for $\gamma = 0.05$', color="blue", linestyle='--')
+plt.plot(xshoot, A5[:, 1], label=r'$\phi_2$ for $\gamma = 0.05$', color="red", linestyle='--')
+plt.xlabel('x')
+plt.ylabel(r'Normalized $|\phi_n|$')
+plt.legend()
+plt.title('Normalized Eigenfunctions for γ = ±0.05')
 plt.show()

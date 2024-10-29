@@ -25,14 +25,14 @@ for modes in range(1,6):
             eigenvalues.append(epsilon)
             break
 
-        if ((-1) ** (modes + 1))*y[-1,0]  > 0:
+        if ((-1) ** (modes + 1))*y[-1,0] > 0:
             epsilon += depsilon
 
         else:
             epsilon -= depsilon
             depsilon /= 2
 
-    epsilon_start = epsilon + 0.1
+    epsilon_start = epsilon + depsilon
 
     norm = trapezoid(y[:, 0] * y[:,0], xshoot)
     eigenfunction_normalized = y[:,0] / np.sqrt(norm)
