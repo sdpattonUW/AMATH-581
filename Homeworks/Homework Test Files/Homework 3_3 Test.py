@@ -2,14 +2,13 @@ import numpy as np
 from scipy.integrate import solve_ivp, trapezoid
 import matplotlib.pyplot as plt
 
-# Part A #
 def shoot2(t, x, epsilon, gamma):
     return [x[1], (gamma * np.abs(x[0])**2 + t**2 - epsilon) * x[0]]
 
 tol = 1e-4
 L = 2
 dx = 0.1
-A_start = 1e-5
+A_start = 0.01
 xshoot = np.arange(-L, L + dx, dx)
 eigenvalues = []
 eigenfunctions = []
@@ -60,16 +59,27 @@ for gamma in [0.05, -0.05]:
         norm = trapezoid(y[:, 0] ** 2, xshoot)
         eigenfunction_normalized = y[:, 0] / np.sqrt(norm)
         eigenfunctions.append(np.abs(eigenfunction_normalized))
-        print(gamma)
+        #print(gamma)
 
-A1 = np.array(eigenfunctions).T
-A2 = np.array(eigenvalues)
+eigenfunctions = np.array(eigenfunctions).T
+eigenvalues = np.array(eigenvalues)
 
-print(A2)
+A5 = eigenfunctions[:,:2]
+A7 = eigenfunctions[:,2:]
 
-plt.plot(xshoot, A1[:, 0], '--')
-plt.plot(xshoot, A1[:, 1], '--')
-plt.plot(xshoot, A1[:, 2], color='red')
-plt.plot(xshoot, A1[:, 3], color='blue')
-plt.legend(['1st + mode','2nd + mode','1st - mode','2nd - mode'])
+A6 = eigenvalues[:2]
+A8 = eigenvalues[2:]
+
+print(A6)
+print(A8)
+
+plt.figure(figsize=(10, 5))
+plt.plot(xshoot, A7[:, 0], label=r'$\phi_1$ for $\gamma = -0.05$', color="orange")
+plt.plot(xshoot, A7[:, 1], label=r'$\phi_2$ for $\gamma = -0.05$', color="green")
+plt.plot(xshoot, A5[:, 0], label=r'$\phi_1$ for $\gamma = 0.05$', color="blue", linestyle='--')
+plt.plot(xshoot, A5[:, 1], label=r'$\phi_2$ for $\gamma = 0.05$', color="red", linestyle='--')
+plt.xlabel('x')
+plt.ylabel(r'Normalized $|\phi_n|$')
+plt.legend()
+plt.title('Normalized Eigenfunctions for γ = ±0.05')
 plt.show()

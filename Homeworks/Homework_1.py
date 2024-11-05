@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Problem 1
+# Part I #
 # Newton Raphson
 x = np.array([-1.6]) # Initial Guess
 
@@ -37,6 +37,7 @@ print("A1 =", A1)
 print("A2 =", A2)
 print("A3 =", A3)
 
+# Part II #
 
 A = np.array([[1,2],[-1,1]])
 B = np.array([[2,0],[0,2]])
