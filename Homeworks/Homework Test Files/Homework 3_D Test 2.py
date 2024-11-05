@@ -45,13 +45,13 @@ for i, solver in enumerate(methods):
     #print(f"Slope for {solver}: {slope}")
 
 # Plot on log-log scale for each method
-#plt.figure()
-#for method in methods:
-#    plt.loglog(results[method]['step_sizes'], TOL, label=f'{method} Method')
-#plt.xlabel('Average Step Size')
-#plt.ylabel('Tolerance')
-#plt.legend()
-#plt.show()
+plt.figure()
+for method in methods:
+    plt.loglog(results[method]['step_sizes'], TOL, label=f'{method} Method')
+plt.xlabel('Average Step Size')
+plt.ylabel('Tolerance')
+plt.legend()
+plt.show()
 
 
 

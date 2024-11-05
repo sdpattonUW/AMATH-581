@@ -62,10 +62,10 @@ for j in range(N):
 for j in range(N-1):
     A[j, j + 1] = 1
     A[j + 1, j] = 1
-A[0,0] = 4/3
-A[0, 1] = -4/3
-A[-1,-1] = 4/3
-A[-1, -2] = -4/3
+A[0,0] = 2/3 + x[1]**2 * dx**2
+A[0, 1] = -2/3
+A[-1,-1] = 2/3 + x[N]**2 * dx**2
+A[-1, -2] =- 2/3
 Amat = A / (dx**2)
 
 linL = -Amat
@@ -79,8 +79,8 @@ psi0 = np.zeros(5)
 psiN = psi0
 
 for n in range(5):
-    psi0[n] = ((4 * V5[0, n] - V5[1,n]) / (2*dx)) / (3/(2*dx) + np.sqrt(L**2 - D5[n]))
-    psiN[n] = ((4 * V5[-1, n] - V5[-2,n]) / (2*dx)) / (3/(2*dx) + np.sqrt(L**2 - D5[n]))
+    psi0[n] = 4/3 * V5[0,n] - 1/2 * V5[1,n]
+    psiN[n] = 4/3 * V5[-1,n] - 1/2 * V5[-2,n]
 
 V5 = np.vstack((psi0, V5, psiN))
 
@@ -98,25 +98,25 @@ def shoot2(t, x, epsilon, gamma):
 tol = 1e-4
 L = 2
 dx = 0.1
-A_start = 1e-5
 xshoot = np.arange(-L, L + dx, dx)
 eigenvalues = []
 eigenfunctions = []
 
 for gamma in [0.05, -0.05]:
     epsilon_start = 0.1
+    A_start = 0.01
 
     for modes in range(1, 3):
         epsilon = epsilon_start
-        depsilon = 0.2
-
+        
         A = A_start
         dA = 0.01
 
         for _ in range(100):
-
+            depsilon = 0.2
+            
             for _ in range(100):
-                x0 = [A, A * np.sqrt(L**2 - epsilon_start)]
+                x0 = [A, A * np.sqrt(L**2 - epsilon)]
 
                 sol = solve_ivp(shoot2, [xshoot[0], xshoot[-1]], x0, t_eval=xshoot, args=(epsilon, gamma), method='RK45')
 
@@ -131,7 +131,7 @@ for gamma in [0.05, -0.05]:
                     epsilon -= depsilon
                     depsilon /= 2
 
-            Area = trapezoid(y[:, 0] ** 2, xshoot)
+            Area = trapezoid(y[:, 0] ** 2, sol.t)
 
             if abs(Area - 1) < tol:
                 eigenvalues.append(epsilon)
@@ -145,7 +145,7 @@ for gamma in [0.05, -0.05]:
 
         epsilon_start = epsilon + 0.1
 
-        norm = trapezoid(y[:, 0] ** 2, xshoot)
+        norm = trapezoid(y[:, 0] ** 2, sol.t)
         eigenfunction_normalized = y[:, 0] / np.sqrt(norm)
         eigenfunctions.append(np.abs(eigenfunction_normalized))
         #print(gamma)
@@ -159,8 +159,8 @@ A7 = eigenfunctions[:,2:]
 A6 = eigenvalues[:2]
 A8 = eigenvalues[2:]
 
-#print(A6)
-#print(A8)
+print(A6)
+print(A8)
 
 #plt.figure(figsize=(10, 5))
 #plt.plot(xshoot, A7[:, 0], label=r'$\phi_1$ for $\gamma = -0.05$', color="orange")
@@ -235,13 +235,13 @@ A11 = []
 A12 = []
 A13 = []
 
-exact_eigenvalues = np.array([1/2, 3/2, 5/2, 7/2, 9/2])
+exact_eigenvalues = [1, 3, 5, 7, 9]
 
 for n in range(5):
 
     # Determine the exact solution using the hermite polynomials
     H_n = hermite(n)
-    exact_solution = exact_solution = np.exp(-xshoot**2 / 2) * H_n(xshoot)
+    exact_solution = np.exp(-xshoot**2 / 2) * H_n(xshoot)
 
     exact_norm = trapezoid(exact_solution**2, xshoot)
     exact_solution = np.abs(exact_solution / np.sqrt(exact_norm))
@@ -260,11 +260,11 @@ for n in range(5):
     eigenvalue_error_b = 100 * (np.abs(A4[n] - exact_eigenvalues[n])/exact_eigenvalues[n])
     A13.append(eigenvalue_error_a)
 
+A10 = np.array(A10)
+A11 = np.array(A11)
+A12 = np.array(A12)
+A13 = np.array(A13)
 
+print(A4)
 
-
-
-
-
-
-
+A11 = np.array(A11)

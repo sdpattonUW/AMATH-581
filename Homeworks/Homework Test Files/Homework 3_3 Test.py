@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.integrate import solve_ivp, trapezoid
 import matplotlib.pyplot as plt
+from scipy.integrate import trapezoid, solve_ivp
 
 def shoot2(t, x, epsilon, gamma):
     return [x[1], (gamma * np.abs(x[0])**2 + t**2 - epsilon) * x[0]]
@@ -26,12 +26,11 @@ for gamma in [0.05, -0.05]:
         for _ in range(100):
 
             for _ in range(100):
-                x0 = [A, A * np.sqrt(L**2 - epsilon_start)]
+                x0 = [A, A * np.sqrt(L**2 - epsilon)]
 
-                # Using solve_ivp with "RK45" method (similar to odeint's default)
                 sol = solve_ivp(shoot2, [xshoot[0], xshoot[-1]], x0, t_eval=xshoot, args=(epsilon, gamma), method='RK45')
 
-                y = sol.y.T  # transpose to make it compatible with odeint's output
+                y = sol.y.T  
 
                 if abs(y[-1, 1] + np.sqrt(L**2 - epsilon) * y[-1, 0]) < tol:
                     break
