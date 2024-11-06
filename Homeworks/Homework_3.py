@@ -13,7 +13,6 @@ xshoot = np.arange(-L,L+dx,dx)
 epsilon_start = 0.1
 eigenvalues = []
 eigenfunctions = []
-x0 = [1, np.sqrt(L**2 - epsilon_start)]
 
 for modes in range(1,6):
     epsilon = epsilon_start
@@ -22,6 +21,8 @@ for modes in range(1,6):
     for _ in range (1000):
         #we do not use odeint anymore due to an issue with grading 
         #y = odeint(shoot1, x0, xshoot, args = (epsilon,)) 
+        x0 = [1, np.sqrt(L**2 - epsilon)]
+
         sol = solve_ivp(shoot1, [xshoot[0], xshoot[-1]], x0, args=(epsilon,), t_eval=xshoot, method='RK45')
         y = sol.y.T
     
@@ -52,20 +53,16 @@ N = 79
 x = np.linspace(-L, L, N+2)
 dx = x[1] - x[0]
 
-P = np.zeros((N,N))
-for j in range(N):
-    P[j,j] = x[j+1] ** 2
-
 A = np.zeros((N,N))
 for j in range(N):
     A[j,j] = -2 - (x[j+1]**2 * dx**2)
 for j in range(N-1):
     A[j, j + 1] = 1
     A[j + 1, j] = 1
-A[0,0] = 2/3 + x[1]**2 * dx**2
-A[0, 1] = -2/3
-A[-1,-1] = 2/3 + x[N]**2 * dx**2
-A[-1, -2] =- 2/3
+A[0,0] = -2/3 - x[1]**2 * dx**2
+A[0, 1] = 2/3
+A[-1,-1] = -2/3 - x[N]**2 * dx**2
+A[-1, -2] = 2/3
 Amat = A / (dx**2)
 
 linL = -Amat
@@ -79,8 +76,8 @@ psi0 = np.zeros(5)
 psiN = psi0
 
 for n in range(5):
-    psi0[n] = 4/3 * V5[0,n] - 1/2 * V5[1,n]
-    psiN[n] = 4/3 * V5[-1,n] - 1/2 * V5[-2,n]
+    psi0[n] = 4/3 * V5[0,n] - 1/3 * V5[1,n]
+    psiN[n] = 4/3 * V5[-1,n] - 1/3 * V5[-2,n]
 
 V5 = np.vstack((psi0, V5, psiN))
 
@@ -90,6 +87,9 @@ for i in range(V5.shape[1]):
 
 A3 = V5
 A4 = D5
+
+#plt.plot(x,A3)
+#plt.show()
 
 # Part C #
 def shoot2(t, x, epsilon, gamma):
@@ -114,7 +114,7 @@ for gamma in [0.05, -0.05]:
 
         for _ in range(100):
             depsilon = 0.2
-            
+
             for _ in range(100):
                 x0 = [A, A * np.sqrt(L**2 - epsilon)]
 
@@ -158,9 +158,6 @@ A7 = eigenfunctions[:,2:]
 
 A6 = eigenvalues[:2]
 A8 = eigenvalues[2:]
-
-print(A6)
-print(A8)
 
 #plt.figure(figsize=(10, 5))
 #plt.plot(xshoot, A7[:, 0], label=r'$\phi_1$ for $\gamma = -0.05$', color="orange")
@@ -255,16 +252,12 @@ for n in range(5):
 
     # Errors for B 
     eigenfunction_error_b = np.sqrt(trapezoid((A3[:,n] - exact_solution)**2, xshoot))
-    A12.append(eigenfunction_error_a)
+    A12.append(eigenfunction_error_b)
 
     eigenvalue_error_b = 100 * (np.abs(A4[n] - exact_eigenvalues[n])/exact_eigenvalues[n])
-    A13.append(eigenvalue_error_a)
+    A13.append(eigenvalue_error_b)
+    plt.plot(xshoot, abs(A3[:,n] - exact_solution))
 
-A10 = np.array(A10)
-A11 = np.array(A11)
-A12 = np.array(A12)
-A13 = np.array(A13)
+plt.show()
 
-print(A4)
 
-A11 = np.array(A11)
